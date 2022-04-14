@@ -114,11 +114,6 @@ const gamePrototype = {
       })
     }
   },
-  start() {
-    gameBoard.generate();
-    this.draw();
-    this.listen();
-  },
   setCell(id, marker) {
     gameBoard.setCell(gameBoard.getCell(id).x,
                       gameBoard.getCell(id).y,
@@ -133,6 +128,9 @@ const gamePrototype = {
       this.listen();
     };
   },
+  start() {
+    
+  },
   swapCurrentPlayer() {
     if (this.currentPlayer == this.playerOne) {
       this.currentPlayer = this.playerTwo
@@ -145,3 +143,31 @@ const game = (playerOne, playerTwo, currentPlayer) => Object.assign(Object.creat
   playerTwo,
   currentPlayer,
 })
+
+const windowHandler = (() => {
+  const window = document.querySelector('main');
+  const form = window.querySelector('form');
+
+  const getFormData = () => {
+    return new FormData(form);
+  }
+  const getInputsFromForm = () => {
+    let inputValues = {};
+    for (pair of getFormData().entries()) {
+      inputValues[pair[0]] = pair[1];
+    }
+    return inputValues;
+  }
+  const listen = () => {
+    form.addEventListener('submit', event => {
+
+      event.preventDefault();
+    });
+  }
+  const startGame = (playerOne, playerTwo) => {
+    const main = game(playerOne, playerTwo, playerOne);
+
+
+  }
+  return { getInputsFromForm, listen, window };
+})();
