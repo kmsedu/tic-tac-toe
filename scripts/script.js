@@ -44,7 +44,7 @@ const gameBoard = (() => {
       board.push(new Array(3).fill(' '));
     }
   }
-  const hasAllSameMarkers = (line) => {
+  const hasAllSameMarkers = line => {
     return line.every(mark => {
       return mark != ' ' && mark == line[0];
     });
@@ -255,9 +255,6 @@ const windowHandler = (() => {
     listen, 
     gameOver,
     gameDraw,
-    getInputsFromForm, 
-    getFormData, 
-    startButton, 
     switchToolbarDisplay,
    }
 })();
