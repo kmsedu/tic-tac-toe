@@ -11,10 +11,9 @@
 </head>
 <body>
   <main>
-    <h1>Tic-tac-toe</h1>
     <div class="game-window"></div>
     <div class="toolbar">
-      <form action="/" method="post">
+      <form action="/" method="post" name="input-form">
         <label for="player-one">Player One:
           <input type="text" name="player-one" id="player-one" required>
         </label>
@@ -22,10 +21,12 @@
         <label for="player-two">Player Two:
           <input type="text" name="player-two" id="player-two" required>
         </label>   
-        <button class="play-button">Start</button>
-        <button type="button" class="play-button play-computer-button">Play against computer</button>
+        <button type="button" class="play-button" id="start-button" for="input-form">Start</button>
+        <button type="button" class="play-button play-computer-button" id="start-cpu-button" id="">Play against computer</button>
       </form>
+      <div class="winner-message hidden"><p>Winner goes here</p></div>
     </div>
+    
   </main>
 </body>
 </html>

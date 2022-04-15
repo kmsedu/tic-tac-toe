@@ -1,7 +1,3 @@
-const Player = (name, marker) => {
-  return { name, marker }
-}
-
 const gameBoard = (() => {
   let board = [];
   const columns = () => {
@@ -27,17 +23,19 @@ const gameBoard = (() => {
         return [board[2][0], board[1][1], board[0][2]];
     }
   }
-  const getWinningLine = () => {
-    const rowWins = rows().filter(line => hasAllSameMarkers(line));
-    const diagWins = diagonals().filter(line => hasAllSameMarkers(line));
-    const colWins = columns().filter(line => hasAllSameMarkers(line));
+  const getFreeCells = () => {
+    const freeCells = [];
 
-    const winningLine = [rowWins, diagWins, colWins].find(arr => arr.length != 0);
-
-    return winningLine;
+    for (let [index, value] of board.flat().entries()) {
+      if (value == ` `) freeCells.push(index);
+    }
+    
+    return freeCells;
   }
-  const getWinningMark = () => {
-    return getWinningLine()[0][0];
+  const getRandomCell = freeCells => {
+    const randomCell = Math.floor(Math.random() * freeCells.length);
+
+    return freeCells[randomCell];
   }
   const generate = () => {
     clear();
@@ -50,6 +48,11 @@ const gameBoard = (() => {
     return line.every(mark => {
       return mark != ' ' && mark == line[0];
     });
+  }
+  const isADraw = () => {
+    if (!isWon() && board.flat().every(cell => cell != ` `)) {
+      return true;
+    } else return false;
   }
   const isWon = () => {
     if (rows().some(line => hasAllSameMarkers(line))) {
@@ -72,8 +75,9 @@ const gameBoard = (() => {
     board,
     generate,
     getCell,
-    getWinningLine,
-    getWinningMark,
+    getFreeCells,
+    getRandomCell,
+    isADraw,
     isWon,
     setCell
   }
@@ -83,6 +87,10 @@ const gamePrototype = {
   window: document.querySelector('.game-window'),
   clear() {
     this.window.innerHTML = '';
+  },
+  computerMove(cell, marker) {
+    this.setCell(cell, marker);
+    this.currentPlayer = this.playerOne;
   },
   draw() {
     let i = 0;
@@ -106,10 +114,28 @@ const gamePrototype = {
   listen() {
     const cells = document.querySelectorAll('.cell');
 
+    if (this.playerTwo.isComputer) {
+      for (cell of cells) {
+          cell.addEventListener('click', (e) => {
+            if (e.target.textContent = ' ') {
+              this.setCell(e.target.id, this.playerOne.marker);
+              this.currentPlayer = this.playerTwo;
+              if (!(gameBoard.isWon() || gameBoard.isADraw())) {
+                const freeCells = gameBoard.getFreeCells();
+                const randomCell = gameBoard.getRandomCell(freeCells);
+                this.computerMove(randomCell, this.playerTwo.marker);
+              }
+            }
+        })
+      }
+      return;
+    }
+
     for (cell of cells) {
       cell.addEventListener('click', (e) => {
         if (e.target.textContent === ' ') {
           this.setCell(e.target.id, this.currentPlayer.marker);
+          this.swapCurrentPlayer();
         }
       })
     }
@@ -122,34 +148,62 @@ const gamePrototype = {
     this.draw();
 
     if (gameBoard.isWon()) {
-      console.log(`Game over, the winner is ${this.currentPlayer.name}.`);
-    } else {
-      this.swapCurrentPlayer();
-      this.listen();
-    };
+      windowHandler.switchToolbarDisplay();
+      windowHandler.gameOver(this.currentPlayer.name);
+    }
+
+    if (gameBoard.isADraw()) {
+      windowHandler.switchToolbarDisplay();
+      windowHandler.gameDraw();
+    }
+
+    this.listen();
   },
   start() {
-    
+    gameBoard.generate();
+    this.draw();
+    this.listen();
   },
   swapCurrentPlayer() {
     if (this.currentPlayer == this.playerOne) {
-      this.currentPlayer = this.playerTwo
-    } else this.currentPlayer = this.playerOne;
+      return this.currentPlayer = this.playerTwo;
+    } 
+
+    return this.currentPlayer = this.playerOne;
   }
 }
 
-const game = (playerOne, playerTwo, currentPlayer) => Object.assign(Object.create(gamePrototype), {
+const game = (playerOne, playerTwo, currentPlayer) => {
+  return Object.assign(Object.create(gamePrototype), {
   playerOne, 
   playerTwo,
   currentPlayer,
-})
+  players: [playerOne, playerTwo],
+})}
+
+const Player = (name, marker, isComputer) => {
+  return { name, marker, isComputer }
+}
+
 
 const windowHandler = (() => {
-  const window = document.querySelector('main');
-  const form = window.querySelector('form');
+  const toolBar = document.querySelector('.toolbar');
+  const startButton = document.getElementById('start-button');
+  const startCpuButton = document.getElementById('start-cpu-button');
+  const winnerMessage = document.querySelector('.winner-message');
+
+  const gameDraw = () => {
+    winnerMessage.firstChild.textContent = `Game is a draw.`;
+  }
+
+  const gameOver = winner => {
+    winnerMessage.firstChild.textContent = `${winner} wins!`;
+
+    winnerMessage.classList.remove('hidden');
+  }
 
   const getFormData = () => {
-    return new FormData(form);
+    return new FormData(startButton.form);
   }
   const getInputsFromForm = () => {
     let inputValues = {};
@@ -158,16 +212,54 @@ const windowHandler = (() => {
     }
     return inputValues;
   }
-  const listen = () => {
-    form.addEventListener('submit', event => {
+  const getPlayerObjects = (playerOne, playerTwo) => {
+    return [Player(playerOne, 'X'), Player(playerTwo, 'O')];
+  }
+  const getPlayerObjectsCpu = (playerOne) => {
+    return [Player(playerOne, 'X'), Player('Computer', 'O', true)];
+  }
+  const getPlayerOneName = inputs => {
+    return inputs['player-one'];
+  }
+  const getPlayerTwoName = inputs => {
+    return inputs['player-two'];
+  }
+  const switchToolbarDisplay = () => {
+    if ([...toolBar.classList].includes('hidden')) {
+      return toolBar.classList.remove('hidden');
+    }
 
-      event.preventDefault();
-    });
+    return toolBar.classList.add('hidden');
+  }
+  const listen = () => {
+    startButton.addEventListener('click', () => {
+      const playerOne = getPlayerOneName(getInputsFromForm());
+      const playerTwo = getPlayerTwoName(getInputsFromForm());
+      const players = getPlayerObjects(playerOne, playerTwo);
+
+      startGame(players[0], players[1]);
+    })
+    startCpuButton.addEventListener('click', () => {
+      const playerOne = getPlayerOneName(getInputsFromForm());
+      const players = getPlayerObjectsCpu(playerOne);
+      startGame(players[0], players[1]);
+    })
   }
   const startGame = (playerOne, playerTwo) => {
     const main = game(playerOne, playerTwo, playerOne);
-
-
+    switchToolbarDisplay();
+    startButton.textContent = 'Play again';
+    main.start();
   }
-  return { getInputsFromForm, listen, window };
+  return { 
+    listen, 
+    gameOver,
+    gameDraw,
+    getInputsFromForm, 
+    getFormData, 
+    startButton, 
+    switchToolbarDisplay,
+   }
 })();
+
+windowHandler.listen();
