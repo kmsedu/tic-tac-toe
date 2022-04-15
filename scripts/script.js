@@ -149,12 +149,12 @@ const gamePrototype = {
 
     if (gameBoard.isWon()) {
       windowHandler.switchToolbarDisplay();
-      windowHandler.gameOver(this.currentPlayer.name);
+      return windowHandler.gameOver(this.currentPlayer.name);
     }
 
     if (gameBoard.isADraw()) {
       windowHandler.switchToolbarDisplay();
-      windowHandler.gameDraw();
+      return windowHandler.gameDraw();
     }
 
     this.listen();
@@ -194,6 +194,8 @@ const windowHandler = (() => {
 
   const gameDraw = () => {
     winnerMessage.firstChild.textContent = `Game is a draw.`;
+
+    winnerMessage.classList.remove('hidden');
   }
 
   const gameOver = winner => {
